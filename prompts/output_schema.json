@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SEDA Audit Review Output",
+  "type": "object",
+  "required": ["metadata", "overall_comment", "section_findings", "ground_rule_scorecard"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["building_name", "building_owner", "rea_name", "report_type", "review_date"],
+      "properties": {
+        "building_name": {"type": "string"},
+        "building_owner": {"type": "string"},
+        "rea_name": {"type": "string"},
+        "report_type": {"type": "string", "enum": ["Commercial", "Industrial"]},
+        "review_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "suggested_library_additions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "overall_comment": {
+      "type": "object",
+      "properties": {
+        "reporting_template": {"type": "string"},
+        "format": {"type": "string"}
+      }
+    },
+    "section_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["section_no", "section_name", "page_ref", "description", "remarks", "verdict", "severity"],
+        "properties": {
+          "section_no": {"type": "string"},
+          "section_name": {"type": "string"},
+          "page_ref": {"type": "string"},
+          "description": {"type": "string"},
+          "remarks": {"type": "string"},
+          "verdict": {"type": "string", "enum": ["✓", "✗", "⚠"]},
+          "severity": {"type": "string", "enum": ["Critical", "Major", "Moderate", "Minor", ""]},
+          "ground_rule_tags": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "critical_findings": {"type": "array", "items": {"type": "string"}},
+    "major_findings": {"type": "array", "items": {"type": "string"}},
+    "moderate_findings": {"type": "array", "items": {"type": "string"}},
+    "minor_findings": {"type": "array", "items": {"type": "string"}},
+    "ground_rule_scorecard": {
+      "type": "object",
+      "properties": {
+        "GR1": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "justification": {"type": "string"}
+          }
+        },
+        "GR2": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "justification": {"type": "string"}
+          }
+        },
+        "GR3": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "justification": {"type": "string"}
+          }
+        },
+        "GR4": {
+          "type": "object",
+          "properties": {
+            "verdict": {"type": "string"},
+            "justification": {"type": "string"}
+          }
+        }
+      }
+    },
+    "recommended_action_order": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 5,
+      "maxItems": 12
+    }
+  }
+}

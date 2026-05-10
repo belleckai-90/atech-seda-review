@@ -1,0 +1,27 @@
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+
+# Database (persisted via Railway volume)
+data/reviewer.db
+
+# Generated outputs (large files)
+outputs/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Uploaded inputs (user files, not source code)
+inputs/
+
+# OS
+.DS_Store
+Thumbs.db

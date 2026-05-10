@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "seda-audit-reviewer"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "click>=8.0",
+    "openpyxl>=3.1",
+    "plotly>=5.0",
+    "python-docx>=1.1",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.0"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: end-to-end tests that call the API (deselect with -m 'not slow')",
+]
+testpaths = ["tests"]
