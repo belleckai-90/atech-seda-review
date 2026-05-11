@@ -43,7 +43,7 @@ _LOGO_PATH   = _HERE / "assets" / "logo.png"
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="SEDA Audit Reviewer | Atech Energy",
+    page_title="Atech.AI | SEDA Audit Reviewer",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -182,7 +182,7 @@ def _sidebar():
             st.image(str(_LOGO_PATH), width=160)
         else:
             st.markdown("### **Atech Energy**")
-        st.markdown("#### SEDA Audit Reviewer")
+        st.markdown("#### Atech.AI")
         st.divider()
 
         if st.session_state.get("logged_in"):
@@ -200,7 +200,7 @@ def _sidebar():
             feats = st.session_state.get("features", [])
             if st.button("🏠  Dashboard",       use_container_width=True): _nav("dashboard")
             if "seda" in feats:
-                if st.button("📋  SEDA Audit Review", use_container_width=True): _nav("new_review")
+                if st.button("📋  SEDA Audit Review", use_container_width=True, key="nav_seda"): _nav("new_review")
             if "bei" in feats:
                 if st.button("📊  BEI Report",  use_container_width=True): _nav("bei_report")
             if st.button("📦  Packages",        use_container_width=True): _nav("packages")
@@ -405,7 +405,7 @@ def page_login():
     with right_col:
         st.markdown('<div class="lp-right-wrap">', unsafe_allow_html=True)
         st.markdown('<p class="lp-title">Welcome back</p>', unsafe_allow_html=True)
-        st.markdown('<p class="lp-sub">Sign in to SEDA Audit Reviewer</p>', unsafe_allow_html=True)
+        st.markdown('<p class="lp-sub">Sign in to Atech.AI</p>', unsafe_allow_html=True)
 
         with st.form("login_form"):
             email    = st.text_input("Email address")
@@ -443,7 +443,7 @@ def page_login():
 
 def page_register():
     st.markdown('<p class="main-title">Create Account</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-title">Register to access SEDA Audit Reviewer</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-title">Register to access Atech.AI</p>', unsafe_allow_html=True)
 
     with st.form("reg_form"):
         name     = st.text_input("Full name")
