@@ -247,6 +247,8 @@ def _metric(col, label, value, warn=False):
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
 def page_login():
+    import streamlit.components.v1 as components
+
     # ── Page-level CSS ────────────────────────────────────────────────────────
     st.markdown("""
     <style>
@@ -266,6 +268,7 @@ def page_login():
         border-left:1px solid #1c2035 !important;
         padding:2.5rem 2rem !important;
     }
+    iframe { border:none !important; display:block; }
 
     div[data-testid="stTextInput"] input {
         background:#13151f !important; border:1px solid #2a2d3a !important;
@@ -301,93 +304,105 @@ def page_login():
 
     left_col, right_col = st.columns([1, 1], gap="small")
 
-    # ── LEFT: SVG animated panel (no JavaScript needed) ───────────────────────
+    # ── LEFT: iframe with full canvas animation ───────────────────────────────
     with left_col:
-        st.markdown("""
-        <div style="background:linear-gradient(145deg,#0e1225,#141828);
-                    min-height:580px; position:relative; overflow:hidden;
-                    display:flex; align-items:center; justify-content:center; padding:2rem;">
+        components.html("""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:linear-gradient(145deg,#0e1225,#141828);
+  width:100%;height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative;font-family:sans-serif;
+}
+.dots{position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.12) 1px,transparent 1px);
+  background-size:16px 16px;}
+.orb1{position:absolute;top:-80px;right:-80px;width:280px;height:280px;
+  border-radius:50%;background:rgba(99,102,241,.1);filter:blur(60px);}
+.orb2{position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;
+  border-radius:50%;background:rgba(79,70,229,.08);filter:blur(50px);}
+canvas{position:absolute;inset:0;width:100%;height:100%;}
+.center{position:relative;z-index:10;text-align:center;}
+.circle-btn{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(99,102,241,.5);}
+.brand{color:#fff;font-size:1.6rem;font-weight:800;letter-spacing:1px;margin-bottom:.4rem;}
+.brand span{color:#818cf8;}
+.tagline{color:rgba(255,255,255,.35);font-size:.8rem;line-height:1.7;}
+</style></head>
+<body>
+<div class="dots"></div>
+<div class="orb1"></div>
+<div class="orb2"></div>
+<canvas id="cv"></canvas>
+<div class="center">
+  <div class="circle-btn">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+         stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </div>
+  <div class="brand">Atech<span>.AI</span></div>
+  <div class="tagline">Intelligent tools for<br/>energy professionals</div>
+</div>
+<script>
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let w,h,dots,routes;
 
-          <!-- Dot grid via CSS pattern -->
-          <div style="position:absolute;inset:0;
-               background-image:radial-gradient(circle,rgba(255,255,255,.12) 1px,transparent 1px);
-               background-size:16px 16px;"></div>
+function resize(){
+  w=cv.width=window.innerWidth;
+  h=cv.height=window.innerHeight;
+  buildScene();
+}
 
-          <!-- Glowing orbs -->
-          <div style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;
-               border-radius:50%;background:rgba(99,102,241,.1);filter:blur(60px);"></div>
-          <div style="position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;
-               border-radius:50%;background:rgba(79,70,229,.08);filter:blur(50px);"></div>
+function buildScene(){
+  dots=[];
+  for(let x=8;x<w;x+=16)for(let y=8;y<h;y+=16)
+    if(Math.random()>.3)dots.push({x,y,o:Math.random()*.3+.05});
+  const cx=w/2,cy=h/2;
+  routes=[
+    {pts:[{x:cx*.4,y:cy*.55},{x:cx*.9,y:cy*.35},{x:cx*1.45,y:cy*.6}],p:0,s:.004},
+    {pts:[{x:cx*.5,y:cy*1.4},{x:cx*1.05,y:cy*1.15},{x:cx*1.55,y:cy*1.35}],p:.5,s:.005},
+    {pts:[{x:cx*.3,y:cy*.9},{x:cx*.8,y:cy*1.2},{x:cx*1.3,y:cy*.85}],p:.25,s:.006},
+  ];
+}
 
-          <!-- SVG animated routes -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;"
-               viewBox="0 0 400 560" preserveAspectRatio="xMidYMid slice">
+function lerp(a,b,t){return a+(b-a)*t;}
 
-            <!-- Route lines -->
-            <line x1="70" y1="170" x2="170" y2="120" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
-            <line x1="170" y1="120" x2="280" y2="155" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
-            <line x1="170" y1="120" x2="155" y2="220" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
-            <line x1="155" y1="220" x2="290" y2="200" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
-            <line x1="70"  y1="170" x2="155" y2="220" stroke="rgba(99,102,241,.2)"  stroke-width="1"/>
+function draw(){
+  ctx.clearRect(0,0,w,h);
+  dots.forEach(d=>{
+    ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${d.o})`;ctx.fill();
+  });
+  routes.forEach(r=>{
+    r.p=(r.p+r.s)%1;
+    const segs=r.pts.length-1,gp=r.p*segs,si=Math.min(Math.floor(gp),segs-1),sp=gp-si;
+    ctx.beginPath();ctx.moveTo(r.pts[0].x,r.pts[0].y);
+    r.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(99,102,241,.35)';ctx.lineWidth=1.5;ctx.stroke();
+    r.pts.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+      ctx.fillStyle='#6366f1';ctx.fill();
+    });
+    const mx=lerp(r.pts[si].x,r.pts[si+1].x,sp),my=lerp(r.pts[si].y,r.pts[si+1].y,sp);
+    ctx.beginPath();ctx.arc(mx,my,7,0,Math.PI*2);
+    ctx.fillStyle='rgba(129,140,248,.25)';ctx.fill();
+    ctx.beginPath();ctx.arc(mx,my,3.5,0,Math.PI*2);
+    ctx.fillStyle='#818cf8';ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
 
-            <!-- Static node dots -->
-            <circle cx="70"  cy="170" r="4" fill="#6366f1" opacity=".9"/>
-            <circle cx="170" cy="120" r="4" fill="#6366f1" opacity=".9"/>
-            <circle cx="280" cy="155" r="4" fill="#6366f1" opacity=".9"/>
-            <circle cx="155" cy="220" r="4" fill="#6366f1" opacity=".9"/>
-            <circle cx="290" cy="200" r="4" fill="#6366f1" opacity=".9"/>
-
-            <!-- Pulsing glow on nodes -->
-            <circle cx="170" cy="120" r="8" fill="rgba(99,102,241,.2)">
-              <animate attributeName="r" values="5;12;5" dur="2.5s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.5;0;0.5" dur="2.5s" repeatCount="indefinite"/>
-            </circle>
-            <circle cx="155" cy="220" r="8" fill="rgba(99,102,241,.2)">
-              <animate attributeName="r" values="5;12;5" dur="3s" begin="1s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.5;0;0.5" dur="3s" begin="1s" repeatCount="indefinite"/>
-            </circle>
-
-            <!-- Moving dot: route A→B→C -->
-            <circle r="4" fill="#818cf8">
-              <animateMotion path="M70,170 L170,120 L280,155" dur="4s" repeatCount="indefinite"/>
-            </circle>
-            <circle r="8" fill="rgba(129,140,248,.25)">
-              <animateMotion path="M70,170 L170,120 L280,155" dur="4s" repeatCount="indefinite"/>
-            </circle>
-
-            <!-- Moving dot: route B→D→E -->
-            <circle r="4" fill="#818cf8">
-              <animateMotion path="M170,120 L155,220 L290,200" dur="5s" begin="1.5s" repeatCount="indefinite"/>
-            </circle>
-            <circle r="8" fill="rgba(129,140,248,.25)">
-              <animateMotion path="M170,120 L155,220 L290,200" dur="5s" begin="1.5s" repeatCount="indefinite"/>
-            </circle>
-
-            <!-- Moving dot: route A→D -->
-            <circle r="3.5" fill="#a5b4fc">
-              <animateMotion path="M70,170 L155,220" dur="3s" begin="0.8s" repeatCount="indefinite"/>
-            </circle>
-          </svg>
-
-          <!-- Centre content -->
-          <div style="position:relative;z-index:10;text-align:center;">
-            <div style="width:52px;height:52px;border-radius:50%;
-                        background:linear-gradient(135deg,#4f46e5,#6366f1);
-                        display:flex;align-items:center;justify-content:center;
-                        margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(99,102,241,.5);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-            <div style="color:#fff;font-size:1.6rem;font-weight:800;letter-spacing:1px;margin-bottom:.4rem;">
-              Atech<span style="color:#818cf8;">.AI</span>
-            </div>
-            <div style="color:rgba(255,255,255,.35);font-size:.8rem;line-height:1.7;max-width:190px;margin:0 auto;">
-              Intelligent tools for<br/>energy professionals
-            </div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+window.addEventListener('resize',resize);
+resize();draw();
+</script>
+</body></html>""", height=560)
 
     # ── RIGHT: sign-in form ────────────────────────────────────────────────────
     with right_col:
