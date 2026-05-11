@@ -30,9 +30,10 @@ from src.auth import login, register, request_password_reset, reset_password
 
 import extra_streamlit_components as stx
 
-@st.cache_resource
 def _cookie_manager():
-    return stx.CookieManager(key="atech_cm")
+    if "_cm" not in st.session_state:
+        st.session_state["_cm"] = stx.CookieManager(key="atech_cm")
+    return st.session_state["_cm"]
 
 _HERE        = Path(__file__).parent
 _PROMPTS_DIR = _HERE / "prompts"
