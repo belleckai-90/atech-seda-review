@@ -602,25 +602,35 @@ def page_admin():
 
     st.markdown('<p class="main-title">Admin Panel</p>', unsafe_allow_html=True)
 
-    tab_key, tab_users, tab_co, tab_pkgs, tab_txn, tab_reviews = st.tabs([
-        "🔑 API Key", "👥 Users", "🏢 Companies", "📦 Packages", "💳 Transactions", "📋 All Reviews"
-    ])
+    viewer_is_superadmin = st.session_state.get("role") == "superadmin"
 
-    # ── API Key tab ──────────────────────────────────────────────────────────
-    with tab_key:
-        st.subheader("Anthropic API Key")
-        st.caption("This key is used for all Pass 2 LLM reviews. It is never shown to users.")
-        current = get_config("ANTHROPIC_API_KEY")
-        masked  = ("sk-ant-..." + current[-6:]) if len(current) > 10 else ("Not set" if not current else "Set")
-        st.info(f"Current key: `{masked}`", icon="🔑")
-        with st.form("apikey_form"):
-            new_key = st.text_input("New API key", type="password", placeholder="sk-ant-api03-...")
-            if st.form_submit_button("Save API Key", type="primary"):
-                if new_key.strip():
-                    set_config("ANTHROPIC_API_KEY", new_key.strip())
-                    st.success("API key saved.", icon="✅")
-                else:
-                    st.error("Key cannot be empty.")
+    tab_labels = ["👥 Users", "🏢 Companies", "📦 Packages", "💳 Transactions", "📋 All Reviews"]
+    if viewer_is_superadmin:
+        tab_labels = ["🔑 API Key"] + tab_labels
+
+    tabs = st.tabs(tab_labels)
+    tab_offset = 0
+
+    if viewer_is_superadmin:
+        tab_key = tabs[0]
+        tab_offset = 1
+        # ── API Key tab ──────────────────────────────────────────────────────
+        with tab_key:
+            st.subheader("Anthropic API Key")
+            st.caption("This key is used for all Pass 2 LLM reviews. It is never shown to users.")
+            current = get_config("ANTHROPIC_API_KEY")
+            masked  = ("sk-ant-..." + current[-6:]) if len(current) > 10 else ("Not set" if not current else "Set")
+            st.info(f"Current key: `{masked}`", icon="🔑")
+            with st.form("apikey_form"):
+                new_key = st.text_input("New API key", type="password", placeholder="sk-ant-api03-...")
+                if st.form_submit_button("Save API Key", type="primary"):
+                    if new_key.strip():
+                        set_config("ANTHROPIC_API_KEY", new_key.strip())
+                        st.success("API key saved.", icon="✅")
+                    else:
+                        st.error("Key cannot be empty.")
+
+    tab_users, tab_co, tab_pkgs, tab_txn, tab_reviews = tabs[tab_offset], tabs[tab_offset+1], tabs[tab_offset+2], tabs[tab_offset+3], tabs[tab_offset+4]
 
     # ── Users tab ────────────────────────────────────────────────────────────
     with tab_users:
