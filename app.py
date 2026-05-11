@@ -111,11 +111,24 @@ def _init_session():
     # Restore session from cookie if not already logged in
     if not st.session_state.get("logged_in"):
         try:
-            uid_str = _cookie_manager().get("auth_uid")
-            if uid_str:
-                user = get_user_by_id(int(uid_str))
-                if user and user.get("is_active") and user.get("status") == "active":
-                    _load_user(user, set_cookie=False)
+            from datetime import datetime, timezone, timedelta
+            cm = _cookie_manager()
+            uid_str         = cm.get("auth_uid")
+            last_active_str = cm.get("last_active")
+            if uid_str and last_active_str:
+                last_active = datetime.fromisoformat(last_active_str)
+                if last_active.tzinfo is None:
+                    last_active = last_active.replace(tzinfo=timezone.utc)
+                idle_hours = (datetime.now(timezone.utc) - last_active).total_seconds() / 3600
+                if idle_hours <= 24:
+                    user = get_user_by_id(int(uid_str))
+                    if user and user.get("is_active") and user.get("status") == "active":
+                        _load_user(user, set_cookie=False)
+                        now = datetime.now(timezone.utc)
+                        cm.set("last_active", now.isoformat(), expires_at=now + timedelta(days=30))
+                else:
+                    cm.delete("auth_uid")
+                    cm.delete("last_active")
         except Exception:
             pass
 
@@ -130,13 +143,17 @@ def _load_user(user: dict, set_cookie: bool = True):
     st.session_state.page      = "dashboard"
     if set_cookie:
         from datetime import datetime, timedelta, timezone
-        _cookie_manager().set("auth_uid", str(user["id"]),
-                              expires_at=datetime.now(timezone.utc) + timedelta(days=30))
+        now = datetime.now(timezone.utc)
+        cm  = _cookie_manager()
+        cm.set("auth_uid",    str(user["id"]),    expires_at=now + timedelta(days=30))
+        cm.set("last_active", now.isoformat(),    expires_at=now + timedelta(days=30))
 
 
 def _logout():
     try:
-        _cookie_manager().delete("auth_uid")
+        cm = _cookie_manager()
+        cm.delete("auth_uid")
+        cm.delete("last_active")
     except Exception:
         pass
     for k in ["logged_in","user_id","role","name","credits","page","review_id"]:
