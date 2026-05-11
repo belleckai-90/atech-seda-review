@@ -653,11 +653,12 @@ def page_admin():
         if pending:
             st.warning(f"⏳ **{len(pending)} account(s) awaiting approval.** See the Pending Approvals tab below.")
 
-        # Top-level metrics
-        active_count = sum(1 for u in users if u["is_active"])
-        admin_count  = sum(1 for u in users if is_staff_role(u["role"]))
+        # Top-level metrics (staff don't see superadmin row)
+        visible_users = users if viewer_is_superadmin else [u for u in users if u["role"] != "superadmin"]
+        active_count = sum(1 for u in visible_users if u["is_active"])
+        admin_count  = sum(1 for u in visible_users if is_staff_role(u["role"]))
         mc1, mc2, mc3, mc4 = st.columns(4)
-        _metric(mc1, "Total Users",      str(len(users)))
+        _metric(mc1, "Total Users",      str(len(visible_users)))
         _metric(mc2, "Active",           str(active_count))
         _metric(mc3, "Admins",           str(admin_count))
         _metric(mc4, "Total Reviews Run", str(len(reviews)))
@@ -671,6 +672,8 @@ def page_admin():
         st.markdown('<hr style="margin:4px 0 6px 0;border-color:#DDE5EE">', unsafe_allow_html=True)
 
         for u in users:
+            if not viewer_is_superadmin and u["role"] == "superadmin":
+                continue
             uid  = u["id"]
             rc   = review_counts.get(uid, 0)
             lr   = last_review_date.get(uid, "")
