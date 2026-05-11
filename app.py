@@ -28,6 +28,12 @@ from src.database import (
 )
 from src.auth import login, register, request_password_reset, reset_password
 
+import extra_streamlit_components as stx
+
+@st.cache_resource
+def _cookie_manager():
+    return stx.CookieManager(key="atech_cm")
+
 _HERE        = Path(__file__).parent
 _PROMPTS_DIR = _HERE / "prompts"
 _REFS_DIR    = _HERE / "references"
@@ -102,8 +108,19 @@ def _init_session():
     _ss("bei_docx_bytes",   None)
     _ss("bei_docx_stem",    None)
 
+    # Restore session from cookie if not already logged in
+    if not st.session_state.get("logged_in"):
+        try:
+            uid_str = _cookie_manager().get("auth_uid")
+            if uid_str:
+                user = get_user_by_id(int(uid_str))
+                if user and user.get("is_active") and user.get("status") == "active":
+                    _load_user(user, set_cookie=False)
+        except Exception:
+            pass
 
-def _load_user(user: dict):
+
+def _load_user(user: dict, set_cookie: bool = True):
     st.session_state.logged_in = True
     st.session_state.user_id   = user["id"]
     st.session_state.role      = user["role"]
@@ -111,9 +128,17 @@ def _load_user(user: dict):
     st.session_state.credits   = user["credits"]
     st.session_state.features  = get_user_features(user["id"])
     st.session_state.page      = "dashboard"
+    if set_cookie:
+        from datetime import datetime, timedelta
+        _cookie_manager().set("auth_uid", str(user["id"]),
+                              expires_at=datetime.now() + timedelta(days=7))
 
 
 def _logout():
+    try:
+        _cookie_manager().delete("auth_uid")
+    except Exception:
+        pass
     for k in ["logged_in","user_id","role","name","credits","page","review_id"]:
         st.session_state.pop(k, None)
     st.rerun()

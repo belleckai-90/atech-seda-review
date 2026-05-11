@@ -1,6 +1,7 @@
 anthropic>=0.40.0
 bcrypt>=4.0
 click>=8.0
+extra-streamlit-components>=0.1.60
 json-repair>=0.25.0
 openpyxl>=3.1
 plotly>=5.0
