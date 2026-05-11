@@ -20,21 +20,31 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-def login(email: str, password: str) -> dict | None:
-    """Return user dict if credentials are valid and account is active, else None."""
+def login(email: str, password: str) -> tuple[dict | None, str]:
+    """Return (user, "") on success, or (None, reason) on failure.
+
+    Reasons: "invalid" | "pending" | "disabled"
+    """
     user = get_user_by_email(email.strip().lower())
     if not user:
-        return None
-    if not user["is_active"]:
-        return None
+        return None, "invalid"
     if not verify_password(password, user["password_hash"]):
-        return None
-    return user
+        return None, "invalid"
+    status = user.get("status", "active")
+    if status == "pending_approval":
+        return None, "pending"
+    if status == "disabled" or not user["is_active"]:
+        return None, "disabled"
+    return user, ""
 
 
 def register(name: str, email: str, password: str,
              company: str = "") -> tuple[bool, str]:
-    """Create a new user. Returns (success, message)."""
+    """Create a new customer account pending staff approval.
+
+    Returns (success, message).
+    On success message is "pending" (awaiting approval) or "superadmin" (env-seeded account).
+    """
     email = email.strip().lower()
     if not name.strip():
         return False, "Name is required."
@@ -45,8 +55,7 @@ def register(name: str, email: str, password: str,
     if get_user_by_email(email):
         return False, "An account with this email already exists."
 
-    # First user ever becomes admin automatically
-    role = "admin" if count_users() == 0 else "user"
     pw_hash = hash_password(password)
-    create_user(name.strip(), email, pw_hash, company.strip(), role)
-    return True, role
+    create_user(name.strip(), email, pw_hash, company.strip(),
+                role="customer", status="pending_approval")
+    return True, "pending"

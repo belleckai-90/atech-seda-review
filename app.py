@@ -19,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.database import (
     init_db, get_config, set_config,
     get_user_by_id, refresh_user, update_user_credits, set_user_active, set_user_role,
-    get_all_users, get_packages, upsert_package,
+    get_all_users, get_packages, upsert_package, is_staff_role,
+    approve_user, disable_user, get_pending_users,
     create_transaction, get_all_transactions,
     create_review, update_review, get_user_reviews, get_review, get_all_reviews,
     create_company, get_all_companies, get_company, update_company,
@@ -144,10 +145,10 @@ def _sidebar():
 
         if st.session_state.get("logged_in"):
             role  = st.session_state.role
-            badge = f'<span class="badge-{"admin" if role=="admin" else "user"}">{role.upper()}</span>'
+            badge = f'<span class="badge-{"admin" if is_staff_role(role) else "user"}">{role.upper()}</span>'
             st.markdown(f"**{st.session_state.name}** {badge}", unsafe_allow_html=True)
             cred = st.session_state.credits
-            if role == "admin":
+            if is_staff_role(role):
                 st.markdown("Credits: **Unlimited** ∞")
             else:
                 st.markdown(f"Credits: **{cred}** review{'s' if cred!=1 else ''} remaining")
@@ -161,7 +162,7 @@ def _sidebar():
             if "bei" in feats:
                 if st.button("📊  BEI Report",  use_container_width=True): _nav("bei_report")
             if st.button("📦  Packages",        use_container_width=True): _nav("packages")
-            if role == "admin":
+            if is_staff_role(role):
                 st.divider()
                 if st.button("⚙️  Admin Panel", use_container_width=True): _nav("admin")
             st.divider()
@@ -212,12 +213,16 @@ def page_login():
         submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
 
     if submitted:
-        user = login(email, password)
+        user, reason = login(email, password)
         if user:
             _load_user(user)
             st.rerun()
+        elif reason == "pending":
+            st.warning("Your account is pending approval. You will be notified once a staff member activates your account.")
+        elif reason == "disabled":
+            st.error("Your account has been disabled. Please contact support.")
         else:
-            st.error("Invalid email or password, or account is inactive.")
+            st.error("Invalid email or password.")
 
     st.markdown("---")
     st.markdown("Don't have an account?")
@@ -243,14 +248,8 @@ def page_register():
         else:
             ok, result = register(name, email, password, company)
             if ok:
-                user = login(email, password)
-                if user:
-                    _load_user(user)
-                    if result == "admin":
-                        st.success("Admin account created. Welcome!")
-                    else:
-                        st.success("Account created! Browse packages to get started.")
-                    st.rerun()
+                st.success("Account created! Your request is pending approval by our team. We'll notify you once your account is activated.")
+                st.info("Please check back or contact kentphang@atechnologies.com.my if you need urgent access.")
             else:
                 st.error(result)
 
@@ -268,12 +267,12 @@ def page_dashboard():
     st.markdown('<p class="sub-title">Your review history</p>', unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
-    reviews = get_user_reviews(st.session_state.user_id) if role != "admin" else get_all_reviews()
+    reviews = get_user_reviews(st.session_state.user_id) if not is_staff_role(role) else get_all_reviews()
     done    = [r for r in reviews if r["status"] == "complete"]
     _metric(c1, "Total reviews", str(len(reviews)))
     _metric(c2, "Completed",     str(len(done)))
-    if role == "admin":
-        _metric(c3, "Credits", "∞ (Admin)")
+    if is_staff_role(role):
+        _metric(c3, "Credits", "∞ (Staff)")
     else:
         _metric(c3, "Credits remaining", str(st.session_state.credits),
                 warn=st.session_state.credits == 0)
@@ -311,7 +310,7 @@ def page_new_review():
     st.markdown('<p class="main-title">SEDA Audit Review</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-title">Upload your report and workbook to begin</p>', unsafe_allow_html=True)
 
-    if role != "admin" and credits == 0:
+    if not is_staff_role(role) and credits == 0:
         st.warning("You have no credits remaining. Please purchase a package to continue.", icon="💳")
         if st.button("View Packages"):
             _nav("packages")
@@ -416,8 +415,8 @@ def _run_review(docx_file, xlsx_file, report_type_choice, dry_run, api_key):
             cost_usd=usage.get("estimated_cost_usd", 0),
         )
 
-        # Deduct credit (not for admin)
-        if role != "admin":
+        # Deduct credit (not for staff/superadmin)
+        if not is_staff_role(role):
             update_user_credits(user_id, -1)
             _sync_credits()
 
@@ -591,7 +590,7 @@ def page_packages():
 # ── Admin panel ───────────────────────────────────────────────────────────────
 
 def page_admin():
-    if st.session_state.role != "admin":
+    if not is_staff_role(st.session_state.role):
         st.error("Access denied."); return
 
     st.markdown('<p class="main-title">Admin Panel</p>', unsafe_allow_html=True)
@@ -632,9 +631,14 @@ def page_admin():
             if ts and ts > last_review_date.get(uid, ""):
                 last_review_date[uid] = ts
 
+        # Pending approvals banner
+        pending = get_pending_users()
+        if pending:
+            st.warning(f"⏳ **{len(pending)} account(s) awaiting approval.** See the Pending Approvals tab below.")
+
         # Top-level metrics
         active_count = sum(1 for u in users if u["is_active"])
-        admin_count  = sum(1 for u in users if u["role"] == "admin")
+        admin_count  = sum(1 for u in users if is_staff_role(u["role"]))
         mc1, mc2, mc3, mc4 = st.columns(4)
         _metric(mc1, "Total Users",      str(len(users)))
         _metric(mc2, "Active",           str(active_count))
@@ -654,8 +658,9 @@ def page_admin():
             rc   = review_counts.get(uid, 0)
             lr   = last_review_date.get(uid, "")
             lr   = lr[:10] if lr else "—"
-            cred = "∞" if u["role"] == "admin" else str(u["credits"])
-            role_lbl   = "🟠 Admin" if u["role"] == "admin" else "🔵 User"
+            cred = "∞" if is_staff_role(u["role"]) else str(u["credits"])
+            role_map = {"superadmin": "🔴 Superadmin", "staff": "🟠 Staff", "admin": "🟠 Staff", "customer": "🔵 Customer", "user": "🔵 Customer"}
+            role_lbl   = role_map.get(u["role"], u["role"])
             status_lbl = "✅ Active" if u["is_active"] else "🔴 Inactive"
 
             row = st.columns([2.2, 2.5, 0.9, 0.9, 0.9, 1, 2])
@@ -668,9 +673,27 @@ def page_admin():
             row[6].caption(lr)
 
         st.divider()
+        # Pending approvals section
+        if pending:
+            st.subheader("⏳ Pending Approvals")
+            for u in pending:
+                with st.expander(f"{u['name']} — {u['email']} ({u.get('company','') or 'No company'})"):
+                    st.write(f"Registered: {u['created_at'][:10]}")
+                    pa1, pa2 = st.columns(2)
+                    if pa1.button("✅ Approve", key=f"approve_{u['id']}", type="primary"):
+                        approve_user(u["id"])
+                        st.success(f"Approved {u['name']}.")
+                        st.rerun()
+                    if pa2.button("❌ Reject & Delete", key=f"reject_{u['id']}"):
+                        disable_user(u["id"])
+                        st.warning(f"Rejected {u['name']}.")
+                        st.rerun()
+            st.divider()
+
         st.subheader("Manage Users")
         for u in users:
-            with st.expander(f"{u['name']} — {u['email']} {'[ADMIN]' if u['role']=='admin' else ''}"):
+            role_tag = f"[{u['role'].upper()}]" if is_staff_role(u["role"]) else ""
+            with st.expander(f"{u['name']} — {u['email']} {role_tag}"):
                 c1, c2, c3, c4 = st.columns([2,2,2,2])
                 c1.write(f"Company: {u['company'] or '—'}")
                 c2.write(f"Credits: {u['credits']}")
@@ -694,8 +717,11 @@ def page_admin():
                         st.rerun()
 
                 with gc3:
-                    new_role = "user" if u["role"] == "admin" else "admin"
-                    if st.button(f"Make {new_role.title()}", key=f"role_{u['id']}"):
+                    if u["role"] == "superadmin":
+                        st.caption("Superadmin — role locked")
+                    else:
+                        new_role = "customer" if is_staff_role(u["role"]) else "staff"
+                    if u["role"] != "superadmin" and st.button(f"Make {new_role.title()}", key=f"role_{u['id']}"):
                         set_user_role(u["id"], new_role)
                         st.success(f"{u['name']} is now {new_role}.")
                         st.rerun()

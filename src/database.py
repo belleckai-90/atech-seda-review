@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -35,9 +36,10 @@ def init_db() -> None:
             email        TEXT    UNIQUE NOT NULL,
             password_hash TEXT   NOT NULL,
             company      TEXT    DEFAULT '',
-            role         TEXT    DEFAULT 'user',
+            role         TEXT    DEFAULT 'customer',
             credits      INTEGER DEFAULT 0,
             is_active    INTEGER DEFAULT 1,
+            status       TEXT    DEFAULT 'active',
             created_at   TEXT    DEFAULT (datetime('now'))
         );
 
@@ -112,11 +114,31 @@ def init_db() -> None:
             updated_at       TEXT    DEFAULT (datetime('now'))
         );
         """)
-        # Add company_id to users if upgrading from older schema
-        try:
-            con.execute("ALTER TABLE users ADD COLUMN company_id INTEGER DEFAULT NULL")
-        except Exception:
-            pass
+        # Migrations for older schemas
+        for migration in [
+            "ALTER TABLE users ADD COLUMN company_id INTEGER DEFAULT NULL",
+            "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'",
+        ]:
+            try:
+                con.execute(migration)
+            except Exception:
+                pass
+
+        # Seed superadmin from environment variables (first boot only)
+        if con.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
+            sa_email = os.environ.get("SUPERADMIN_EMAIL", "").strip().lower()
+            sa_pw    = os.environ.get("SUPERADMIN_PASSWORD", "").strip()
+            if sa_email and sa_pw:
+                try:
+                    import bcrypt
+                    pw_hash = bcrypt.hashpw(sa_pw.encode(), bcrypt.gensalt()).decode()
+                    con.execute(
+                        "INSERT INTO users(name,email,password_hash,company,role,status) "
+                        "VALUES(?,?,?,?,?,?)",
+                        ("Super Admin", sa_email, pw_hash, "Atech Internal", "superadmin", "active"),
+                    )
+                except Exception:
+                    pass
 
         # Seed default internal company
         if con.execute("SELECT COUNT(*) FROM companies").fetchone()[0] == 0:
@@ -160,11 +182,12 @@ def count_users() -> int:
 
 
 def create_user(name: str, email: str, password_hash: str,
-                company: str = "", role: str = "user") -> int:
+                company: str = "", role: str = "customer",
+                status: str = "active") -> int:
     with _conn() as con:
         cur = con.execute(
-            "INSERT INTO users(name,email,password_hash,company,role) VALUES(?,?,?,?,?)",
-            (name, email, password_hash, company, role),
+            "INSERT INTO users(name,email,password_hash,company,role,status) VALUES(?,?,?,?,?,?)",
+            (name, email, password_hash, company, role, status),
         )
         return cur.lastrowid
 
@@ -203,6 +226,24 @@ def set_user_active(user_id: int, active: bool) -> None:
 def set_user_role(user_id: int, role: str) -> None:
     with _conn() as con:
         con.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
+
+
+def approve_user(user_id: int) -> None:
+    with _conn() as con:
+        con.execute("UPDATE users SET status='active', is_active=1 WHERE id=?", (user_id,))
+
+
+def disable_user(user_id: int) -> None:
+    with _conn() as con:
+        con.execute("UPDATE users SET status='disabled', is_active=0 WHERE id=?", (user_id,))
+
+
+def get_pending_users() -> list[dict]:
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT * FROM users WHERE status='pending_approval' ORDER BY created_at DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
 
 
 def refresh_user(user_id: int) -> dict | None:
@@ -244,13 +285,18 @@ def set_user_company(user_id: int, company_id: int | None) -> None:
         con.execute("UPDATE users SET company_id=? WHERE id=?", (company_id, user_id))
 
 
+def is_staff_role(role: str) -> bool:
+    """Returns True for roles with internal staff-level access."""
+    return role in ("superadmin", "staff", "admin")
+
+
 def get_user_features(user_id: int) -> list[str]:
-    """Return list of feature keys for a user. Admins always get all features."""
+    """Return list of feature keys for a user. Staff/superadmin always get all features."""
     with _conn() as con:
         user = con.execute("SELECT role, company_id FROM users WHERE id=?", (user_id,)).fetchone()
         if not user:
             return []
-        if user["role"] == "admin":
+        if is_staff_role(user["role"]):
             return ["seda", "bei"]
         if user["company_id"]:
             row = con.execute("SELECT features FROM companies WHERE id=?",
