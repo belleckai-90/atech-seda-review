@@ -291,16 +291,21 @@ def page_login():
         box-shadow:0 6px 24px rgba(99,102,241,.4) !important;
         transform:translateY(-1px) !important;
     }
-    /* Create Account + Reset Password buttons */
+    /* Create Account button */
     div[data-testid="stHorizontalBlock"] > div:last-child .stButton > button {
         background:transparent !important; border:1px solid #2a2d3a !important;
         color:#d1d5db !important; border-radius:8px !important;
         transition:all .25s !important; font-size:.85rem !important;
+        width:100% !important;
     }
     div[data-testid="stHorizontalBlock"] > div:last-child .stButton > button:hover {
         border-color:#6366f1 !important; color:#a5b4fc !important;
         background:rgba(99,102,241,.08) !important;
     }
+    /* forgot link */
+    .forgot-link { text-align:center; margin-top:.9rem; }
+    .forgot-link a { color:#6366f1; font-size:.84rem; text-decoration:none; }
+    .forgot-link a:hover { color:#a5b4fc; text-decoration:underline; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -418,15 +423,16 @@ resize();draw();
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Sign In  →", use_container_width=True, type="primary")
 
-        st.markdown("<hr style='border:none;border-top:1px solid #2a2d3a;margin:1.4rem 0 .8rem 0;'/>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class='forgot-link'>
+          <a href='?page=forgot'>Forgot password?</a>
+        </div>
+        """, unsafe_allow_html=True)
 
-        col_l, col_r = st.columns(2, gap="small")
-        with col_l:
-            if st.button("Create Account", use_container_width=True, key="btn_reg"):
-                _nav("register")
-        with col_r:
-            if st.button("Reset Password", use_container_width=True, key="btn_rst"):
-                _nav("forgot")
+        st.markdown("<hr style='border:none;border-top:1px solid #2a2d3a;margin:1.2rem 0 .9rem 0;'/>", unsafe_allow_html=True)
+
+        if st.button("Create Account", use_container_width=True, key="btn_reg"):
+            _nav("register")
 
     if submitted:
         user, reason = login(email, password)
