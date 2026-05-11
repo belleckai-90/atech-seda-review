@@ -247,30 +247,29 @@ def _metric(col, label, value, warn=False):
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
 def page_login():
-    logo_tag = ""  # text branding only, no image
-
-    # ── Global page CSS ───────────────────────────────────────────────────────
+    # ── Page-level CSS ────────────────────────────────────────────────────────
     st.markdown("""
     <style>
-    [data-testid="stSidebar"]  { display:none !important; }
-    [data-testid="stHeader"]   { display:none !important; }
-    [data-testid="stToolbar"]  { display:none !important; }
-    .block-container { padding:4vh 1rem 1rem !important; max-width:960px !important; }
-    .stApp { background:#0a0d1a !important; }
+    [data-testid="stSidebar"] { display:none !important; }
+    [data-testid="stHeader"]  { display:none !important; }
+    [data-testid="stToolbar"] { display:none !important; }
+    .block-container { padding:5vh 1rem 1rem !important; max-width:960px !important; }
+    .stApp { background:#08091a !important; }
 
-    /* Merge the two columns into one card */
     div[data-testid="stHorizontalBlock"] {
         gap:0 !important; align-items:stretch;
         border-radius:20px; overflow:hidden;
-        box-shadow:0 30px 80px rgba(0,0,0,0.65);
+        box-shadow:0 30px 80px rgba(0,0,0,0.7);
+    }
+    div[data-testid="stHorizontalBlock"] > div:last-child {
+        background:#090b13 !important;
+        border-left:1px solid #1c2035 !important;
+        padding:2.5rem 2rem !important;
     }
 
-    /* Input fields */
     div[data-testid="stTextInput"] input {
-        background:#13151f !important;
-        border:1px solid #2a2d3a !important;
-        color:#e5e7eb !important;
-        border-radius:8px !important;
+        background:#13151f !important; border:1px solid #2a2d3a !important;
+        color:#e5e7eb !important; border-radius:8px !important;
     }
     div[data-testid="stTextInput"] input:focus {
         border-color:#6366f1 !important;
@@ -278,127 +277,119 @@ def page_login():
     }
     div[data-testid="stTextInput"] label { color:#9ca3af !important; font-size:.84rem !important; }
 
-    /* Sign In button */
     div[data-testid="stForm"] .stFormSubmitButton > button {
-        background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%) !important;
+        background:linear-gradient(135deg,#4f46e5,#6366f1) !important;
         color:white !important; border:none !important;
         border-radius:8px !important; font-weight:600 !important;
-        height:2.75rem !important; letter-spacing:.4px;
-        transition:all .3s !important;
+        height:2.75rem !important; letter-spacing:.4px; transition:all .3s !important;
     }
     div[data-testid="stForm"] .stFormSubmitButton > button:hover {
-        background:linear-gradient(135deg,#4338ca 0%,#4f46e5 100%) !important;
+        background:linear-gradient(135deg,#4338ca,#4f46e5) !important;
         box-shadow:0 6px 24px rgba(99,102,241,.4) !important;
         transform:translateY(-1px) !important;
     }
-
-    /* Secondary action buttons */
     .lp-btns .stButton > button {
-        background:transparent !important;
-        border:1px solid #2a2d3a !important;
-        color:#9ca3af !important;
-        border-radius:8px !important;
-        transition:all .25s !important;
-        font-size:.85rem !important;
+        background:transparent !important; border:1px solid #2a2d3a !important;
+        color:#9ca3af !important; border-radius:8px !important;
+        transition:all .25s !important; font-size:.85rem !important;
     }
     .lp-btns .stButton > button:hover {
-        border-color:#6366f1 !important;
-        color:#a5b4fc !important;
-    }
-
-    /* Right panel background via column target */
-    div[data-testid="stHorizontalBlock"] > div:last-child {
-        background:#090b13 !important;
-        border-left:1px solid #1c2035;
-        padding:2.5rem 2rem !important;
+        border-color:#6366f1 !important; color:#a5b4fc !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
     left_col, right_col = st.columns([1, 1], gap="small")
 
-    # ── LEFT: animated canvas panel (all in one markdown block) ──────────────
+    # ── LEFT: SVG animated panel (no JavaScript needed) ───────────────────────
     with left_col:
-        st.markdown(f"""
-        <div id="lp-wrap" style="position:relative;min-height:580px;overflow:hidden;
-             background:linear-gradient(145deg,#0e1225,#141828);
-             display:flex;align-items:center;justify-content:center;padding:2rem;">
-          <canvas id="lp-cv" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        st.markdown("""
+        <div style="background:linear-gradient(145deg,#0e1225,#141828);
+                    min-height:580px; position:relative; overflow:hidden;
+                    display:flex; align-items:center; justify-content:center; padding:2rem;">
+
+          <!-- Dot grid via CSS pattern -->
+          <div style="position:absolute;inset:0;
+               background-image:radial-gradient(circle,rgba(255,255,255,.12) 1px,transparent 1px);
+               background-size:16px 16px;"></div>
+
+          <!-- Glowing orbs -->
+          <div style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;
+               border-radius:50%;background:rgba(99,102,241,.1);filter:blur(60px);"></div>
+          <div style="position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;
+               border-radius:50%;background:rgba(79,70,229,.08);filter:blur(50px);"></div>
+
+          <!-- SVG animated routes -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;"
+               viewBox="0 0 400 560" preserveAspectRatio="xMidYMid slice">
+
+            <!-- Route lines -->
+            <line x1="70" y1="170" x2="170" y2="120" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+            <line x1="170" y1="120" x2="280" y2="155" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+            <line x1="170" y1="120" x2="155" y2="220" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+            <line x1="155" y1="220" x2="290" y2="200" stroke="rgba(99,102,241,.35)" stroke-width="1.5"/>
+            <line x1="70"  y1="170" x2="155" y2="220" stroke="rgba(99,102,241,.2)"  stroke-width="1"/>
+
+            <!-- Static node dots -->
+            <circle cx="70"  cy="170" r="4" fill="#6366f1" opacity=".9"/>
+            <circle cx="170" cy="120" r="4" fill="#6366f1" opacity=".9"/>
+            <circle cx="280" cy="155" r="4" fill="#6366f1" opacity=".9"/>
+            <circle cx="155" cy="220" r="4" fill="#6366f1" opacity=".9"/>
+            <circle cx="290" cy="200" r="4" fill="#6366f1" opacity=".9"/>
+
+            <!-- Pulsing glow on nodes -->
+            <circle cx="170" cy="120" r="8" fill="rgba(99,102,241,.2)">
+              <animate attributeName="r" values="5;12;5" dur="2.5s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.5;0;0.5" dur="2.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="155" cy="220" r="8" fill="rgba(99,102,241,.2)">
+              <animate attributeName="r" values="5;12;5" dur="3s" begin="1s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.5;0;0.5" dur="3s" begin="1s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Moving dot: route A→B→C -->
+            <circle r="4" fill="#818cf8">
+              <animateMotion path="M70,170 L170,120 L280,155" dur="4s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="8" fill="rgba(129,140,248,.25)">
+              <animateMotion path="M70,170 L170,120 L280,155" dur="4s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Moving dot: route B→D→E -->
+            <circle r="4" fill="#818cf8">
+              <animateMotion path="M170,120 L155,220 L290,200" dur="5s" begin="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="8" fill="rgba(129,140,248,.25)">
+              <animateMotion path="M170,120 L155,220 L290,200" dur="5s" begin="1.5s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Moving dot: route A→D -->
+            <circle r="3.5" fill="#a5b4fc">
+              <animateMotion path="M70,170 L155,220" dur="3s" begin="0.8s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+
+          <!-- Centre content -->
           <div style="position:relative;z-index:10;text-align:center;">
-            {logo_tag}
-            <div style="color:rgba(255,255,255,0.9);font-size:1.4rem;font-weight:700;
-                        letter-spacing:1px;margin-bottom:.5rem;">Atech<span style="color:#818cf8;">.AI</span></div>
-            <div style="color:rgba(255,255,255,0.35);font-size:.8rem;line-height:1.7;max-width:190px;margin:0 auto;">
+            <div style="width:52px;height:52px;border-radius:50%;
+                        background:linear-gradient(135deg,#4f46e5,#6366f1);
+                        display:flex;align-items:center;justify-content:center;
+                        margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(99,102,241,.5);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <div style="color:#fff;font-size:1.6rem;font-weight:800;letter-spacing:1px;margin-bottom:.4rem;">
+              Atech<span style="color:#818cf8;">.AI</span>
+            </div>
+            <div style="color:rgba(255,255,255,.35);font-size:.8rem;line-height:1.7;max-width:190px;margin:0 auto;">
               Intelligent tools for<br/>energy professionals
             </div>
           </div>
         </div>
-        <script>
-        (function(){{
-          const cv = document.getElementById('lp-cv');
-          if(!cv) return;
-          const ctx = cv.getContext('2d');
-          let w=0, h=0, dots=[], routes=[];
-
-          function resize(){{
-            const p = cv.parentElement;
-            w = cv.width  = p.offsetWidth  || 440;
-            h = cv.height = p.offsetHeight || 580;
-            buildScene();
-          }}
-
-          function buildScene(){{
-            dots = [];
-            for(let x=8;x<w;x+=16) for(let y=8;y<h;y+=16)
-              if(Math.random()>.3) dots.push({{x,y,o:Math.random()*.3+.05}});
-
-            const cx=w/2, cy=h/2;
-            routes = [
-              {{pts:[{{x:cx*.35,y:cy*.45}},{{x:cx*.85,y:cy*.28}},{{x:cx*1.4,y:cy*.52}}],p:0,s:.004}},
-              {{pts:[{{x:cx*.45,y:cy*1.45}},{{x:cx*1.0,y:cy*1.18}},{{x:cx*1.55,y:cy*1.38}}],p:.5,s:.005}},
-              {{pts:[{{x:cx*.25,y:cy*.85}},{{x:cx*.75,y:cy*1.12}},{{x:cx*1.2,y:cy*.78}}],p:.2,s:.006}},
-            ];
-          }}
-
-          function lerp(a,b,t){{return a+(b-a)*t;}}
-
-          function draw(){{
-            ctx.clearRect(0,0,w,h);
-            dots.forEach(d=>{{
-              ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);
-              ctx.fillStyle=`rgba(255,255,255,${{d.o}})`;ctx.fill();
-            }});
-            routes.forEach(r=>{{
-              r.p=(r.p+r.s)%1;
-              const segs=r.pts.length-1;
-              const gp=r.p*segs;
-              const si=Math.min(Math.floor(gp),segs-1);
-              const sp=gp-si;
-              ctx.beginPath();ctx.moveTo(r.pts[0].x,r.pts[0].y);
-              r.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
-              ctx.strokeStyle='rgba(99,102,241,.3)';ctx.lineWidth=1.5;ctx.stroke();
-              r.pts.forEach(p=>{{
-                ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
-                ctx.fillStyle='#6366f1';ctx.fill();
-              }});
-              const mx=lerp(r.pts[si].x,r.pts[si+1].x,sp);
-              const my=lerp(r.pts[si].y,r.pts[si+1].y,sp);
-              ctx.beginPath();ctx.arc(mx,my,7,0,Math.PI*2);
-              ctx.fillStyle='rgba(129,140,248,.25)';ctx.fill();
-              ctx.beginPath();ctx.arc(mx,my,3.5,0,Math.PI*2);
-              ctx.fillStyle='#818cf8';ctx.fill();
-            }});
-            requestAnimationFrame(draw);
-          }}
-
-          window.addEventListener('resize',resize);
-          setTimeout(resize,80);
-          draw();
-        }})();
-        </script>
         """, unsafe_allow_html=True)
 
-    # ── RIGHT: sign-in form ───────────────────────────────────────────────────
+    # ── RIGHT: sign-in form ────────────────────────────────────────────────────
     with right_col:
         st.markdown("""
         <p style="color:#f3f4f6;font-size:1.75rem;font-weight:700;margin:0 0 .2rem 0;">Welcome back</p>
