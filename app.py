@@ -129,9 +129,9 @@ def _load_user(user: dict, set_cookie: bool = True):
     st.session_state.features  = get_user_features(user["id"])
     st.session_state.page      = "dashboard"
     if set_cookie:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         _cookie_manager().set("auth_uid", str(user["id"]),
-                              expires_at=datetime.now() + timedelta(days=7))
+                              expires_at=datetime.now(timezone.utc) + timedelta(days=30))
 
 
 def _logout():
