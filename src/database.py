@@ -91,6 +91,15 @@ def init_db() -> None:
             created_at  TEXT    DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            token      TEXT    UNIQUE NOT NULL,
+            expires_at TEXT    NOT NULL,
+            used       INTEGER DEFAULT 0,
+            created_at TEXT    DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS bei_buildings (
             id               INTEGER PRIMARY KEY AUTOINCREMENT,
             building_name    TEXT    NOT NULL UNIQUE,
@@ -398,6 +407,34 @@ def get_all_reviews() -> list[dict]:
             "ORDER BY r.created_at DESC"
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+# ── Password Reset Tokens ─────────────────────────────────────────────────────
+
+def create_reset_token(user_id: int, token: str, expires_at: str) -> None:
+    with _conn() as con:
+        con.execute(
+            "INSERT INTO password_reset_tokens(user_id,token,expires_at) VALUES(?,?,?)",
+            (user_id, token, expires_at),
+        )
+
+
+def get_reset_token(token: str) -> dict | None:
+    with _conn() as con:
+        row = con.execute(
+            "SELECT * FROM password_reset_tokens WHERE token=?", (token,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def mark_token_used(token: str) -> None:
+    with _conn() as con:
+        con.execute("UPDATE password_reset_tokens SET used=1 WHERE token=?", (token,))
+
+
+def update_user_password(user_id: int, password_hash: str) -> None:
+    with _conn() as con:
+        con.execute("UPDATE users SET password_hash=? WHERE id=?", (password_hash, user_id))
 
 
 # ── BEI Buildings ──────────────────────────────────────────────────────────────

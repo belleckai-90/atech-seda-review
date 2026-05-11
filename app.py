@@ -26,7 +26,7 @@ from src.database import (
     create_company, get_all_companies, get_company, update_company,
     set_user_company, get_user_features,
 )
-from src.auth import login, register
+from src.auth import login, register, request_password_reset, reset_password
 
 _HERE        = Path(__file__).parent
 _PROMPTS_DIR = _HERE / "prompts"
@@ -212,6 +212,17 @@ def page_login():
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
 
+    st.markdown("---")
+    col_l, col_r = st.columns(2)
+    with col_l:
+        st.markdown("Don't have an account?")
+        if st.button("Create Account", use_container_width=True):
+            _nav("register")
+    with col_r:
+        st.markdown("Forgot your password?")
+        if st.button("Reset Password", use_container_width=True):
+            _nav("forgot")
+
     if submitted:
         user, reason = login(email, password)
         if user:
@@ -224,10 +235,6 @@ def page_login():
         else:
             st.error("Invalid email or password.")
 
-    st.markdown("---")
-    st.markdown("Don't have an account?")
-    if st.button("Create Account", use_container_width=False):
-        _nav("register")
 
 
 def page_register():
@@ -1216,10 +1223,59 @@ def _show_bei_dashboard(energy_data: dict, profile: dict):
         st.plotly_chart(fig3, use_container_width=True)
 
 
+def page_forgot_password():
+    st.markdown('<p class="main-title">Reset Password</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-title">Enter your email and we\'ll send a reset link.</p>', unsafe_allow_html=True)
+
+    with st.form("forgot_form"):
+        email = st.text_input("Email address")
+        submitted = st.form_submit_button("Send Reset Link", use_container_width=True, type="primary")
+
+    if submitted:
+        request_password_reset(email)
+        st.success("If an account exists for that email, a reset link has been sent. Check your inbox (and spam folder).")
+
+    st.markdown("---")
+    if st.button("← Back to Sign In"):
+        _nav("login")
+
+
+def page_reset_password(token: str):
+    st.markdown('<p class="main-title">Set New Password</p>', unsafe_allow_html=True)
+
+    with st.form("reset_form"):
+        new_pw  = st.text_input("New password (min 8 characters)", type="password")
+        confirm = st.text_input("Confirm new password", type="password")
+        submitted = st.form_submit_button("Update Password", use_container_width=True, type="primary")
+
+    if submitted:
+        if new_pw != confirm:
+            st.error("Passwords do not match.")
+        else:
+            ok, msg = reset_password(token, new_pw)
+            if ok:
+                st.success(msg)
+                st.info("You can now sign in with your new password.")
+                st.query_params.clear()
+                if st.button("Go to Sign In"):
+                    _nav("login")
+            else:
+                st.error(msg)
+
+
 # ── Router ────────────────────────────────────────────────────────────────────
 def main():
     init_db()
     _init_session()
+
+    # Handle password reset links before anything else
+    qp = st.query_params
+    qp_page = qp.get("page", "")
+    if qp_page == "reset":
+        token = qp.get("token", "")
+        page_reset_password(token)
+        return
+
     _sidebar()
 
     page = st.session_state.get("page", "login")
@@ -1227,6 +1283,8 @@ def main():
     if not st.session_state.get("logged_in"):
         if page == "register":
             page_register()
+        elif page == "forgot":
+            page_forgot_password()
         else:
             page_login()
         return
