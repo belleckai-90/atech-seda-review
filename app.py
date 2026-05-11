@@ -418,15 +418,13 @@ resize();draw();
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Sign In  →", use_container_width=True, type="primary")
 
-        st.markdown("<hr style='border:none;border-top:1px solid #2a2d3a;margin:1.4rem 0 .6rem 0;'/>", unsafe_allow_html=True)
+        st.markdown("<hr style='border:none;border-top:1px solid #2a2d3a;margin:1.4rem 0 .8rem 0;'/>", unsafe_allow_html=True)
 
         col_l, col_r = st.columns(2, gap="small")
         with col_l:
-            st.markdown("<div style='color:#9ca3af;font-size:.8rem;margin-bottom:.3rem;'>No account yet?</div>", unsafe_allow_html=True)
             if st.button("Create Account", use_container_width=True, key="btn_reg"):
                 _nav("register")
         with col_r:
-            st.markdown("<div style='color:#9ca3af;font-size:.8rem;margin-bottom:.3rem;'>Forgot password?</div>", unsafe_allow_html=True)
             if st.button("Reset Password", use_container_width=True, key="btn_rst"):
                 _nav("forgot")
 
