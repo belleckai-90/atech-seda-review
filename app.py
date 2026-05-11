@@ -247,185 +247,182 @@ def _metric(col, label, value, warn=False):
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
 def page_login():
-    import base64
+    logo_tag = ""  # text branding only, no image
 
-    # Encode logo for embedding
-    logo_b64 = ""
-    if _LOGO_PATH.exists():
-        logo_b64 = base64.b64encode(_LOGO_PATH.read_bytes()).decode()
-    logo_img = (
-        f"<img src='data:image/png;base64,{logo_b64}' style='width:130px;height:auto;"
-        f"filter:drop-shadow(0 0 18px rgba(80,200,120,0.35));margin-bottom:1.2rem;' />"
-        if logo_b64 else
-        "<div style='font-size:2rem;font-weight:800;color:#4ade80;letter-spacing:2px;margin-bottom:1.2rem;'>ATECH</div>"
-    )
-
-    st.markdown(f"""
+    # ── Global page CSS ───────────────────────────────────────────────────────
+    st.markdown("""
     <style>
-    /* ── Login page overrides ── */
-    [data-testid="stSidebar"]  {{ display: none !important; }}
-    [data-testid="stHeader"]   {{ background: transparent !important; border: none !important; }}
-    [data-testid="stToolbar"]  {{ display: none !important; }}
-    .block-container           {{ padding: 1.5rem 1rem !important; max-width: 100% !important; }}
-    .stApp                     {{ background: linear-gradient(135deg,#060818 0%,#0d1023 100%) !important; }}
+    [data-testid="stSidebar"]  { display:none !important; }
+    [data-testid="stHeader"]   { display:none !important; }
+    [data-testid="stToolbar"]  { display:none !important; }
+    .block-container { padding:4vh 1rem 1rem !important; max-width:960px !important; }
+    .stApp { background:#0a0d1a !important; }
 
-    /* Column wrapper — remove gap, no background */
-    div[data-testid="stHorizontalBlock"] {{ gap: 0 !important; align-items: stretch; }}
-
-    /* Left decorative panel */
-    .lp-left {{
-        background: linear-gradient(145deg,#0e1225 0%,#141828 100%);
-        border-radius: 18px 0 0 18px;
-        min-height: 560px;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        padding: 2.5rem 2rem;
-        position: relative; overflow: hidden;
-        border: 1px solid #1c2035;
-        border-right: none;
-    }}
-    .lp-dots {{
-        position: absolute; inset: 0;
-        background-image: radial-gradient(circle,rgba(255,255,255,.13) 1px,transparent 1px);
-        background-size: 18px 18px;
-        animation: lp-drift 40s linear infinite;
-    }}
-    @keyframes lp-drift {{ to {{ background-position: 180px 180px; }} }}
-    .lp-orb {{
-        position: absolute; border-radius: 50%; filter: blur(55px);
-        animation: lp-pulse 7s ease-in-out infinite;
-    }}
-    .lp-orb-1 {{ width:220px;height:220px;background:rgba(59,130,246,.12);top:-60px;right:-60px; }}
-    .lp-orb-2 {{ width:160px;height:160px;background:rgba(99,102,241,.09);bottom:-40px;left:-40px;animation-delay:3.5s; }}
-    @keyframes lp-pulse {{
-        0%,100% {{ transform:scale(1); opacity:.7; }}
-        50%      {{ transform:scale(1.15); opacity:1; }}
-    }}
-    .lp-beam {{
-        position:absolute; width:1.5px;
-        background:linear-gradient(to bottom,transparent,rgba(59,130,246,.55),transparent);
-        animation:lp-beam 5s ease-in-out infinite;
-    }}
-    .lp-beam:nth-child(4)  {{ height:90px;  left:28%; top:18%; animation-delay:0s;   }}
-    .lp-beam:nth-child(5)  {{ height:70px;  left:62%; top:42%; animation-delay:1.8s; }}
-    .lp-beam:nth-child(6)  {{ height:110px; left:78%; top:12%; animation-delay:3.5s; }}
-    @keyframes lp-beam {{
-        0%,100% {{ opacity:0; transform:translateY(0);   }}
-        50%      {{ opacity:1; transform:translateY(18px); }}
-    }}
-    .lp-content {{
-        position:relative; z-index:10;
-        text-align:center; display:flex;
-        flex-direction:column; align-items:center;
-    }}
-    .lp-caption {{
-        color:rgba(255,255,255,.38);
-        font-size:.82rem; line-height:1.6;
-        max-width:200px; margin-top:1rem;
-    }}
-
-    /* Right form panel */
-    .lp-right-wrap {{
-        background:#090b13;
-        border-radius: 0 18px 18px 0;
-        border: 1px solid #1c2035;
-        border-left: none;
-        padding: 3rem 2.5rem;
-        display:flex; flex-direction:column; justify-content:center;
-    }}
-    .lp-title  {{ color:#f3f4f6; font-size:1.75rem; font-weight:700; margin-bottom:.2rem; }}
-    .lp-sub    {{ color:#6b7280; font-size:.88rem; margin-bottom:1.8rem; }}
-    .lp-divider {{ border: none; border-top: 1px solid #1f2130; margin: 1.4rem 0; }}
+    /* Merge the two columns into one card */
+    div[data-testid="stHorizontalBlock"] {
+        gap:0 !important; align-items:stretch;
+        border-radius:20px; overflow:hidden;
+        box-shadow:0 30px 80px rgba(0,0,0,0.65);
+    }
 
     /* Input fields */
-    div[data-testid="stTextInput"] input {{
+    div[data-testid="stTextInput"] input {
         background:#13151f !important;
         border:1px solid #2a2d3a !important;
         color:#e5e7eb !important;
         border-radius:8px !important;
-    }}
-    div[data-testid="stTextInput"] input:focus {{
-        border-color:#3b82f6 !important;
-        box-shadow:0 0 0 3px rgba(59,130,246,.18) !important;
-    }}
-    div[data-testid="stTextInput"] label {{ color:#9ca3af !important; font-size:.84rem !important; }}
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color:#6366f1 !important;
+        box-shadow:0 0 0 3px rgba(99,102,241,.2) !important;
+    }
+    div[data-testid="stTextInput"] label { color:#9ca3af !important; font-size:.84rem !important; }
 
-    /* Sign In submit button */
-    div[data-testid="stForm"] .stFormSubmitButton > button {{
-        background:linear-gradient(135deg,#16a34a 0%,#059669 100%) !important;
+    /* Sign In button */
+    div[data-testid="stForm"] .stFormSubmitButton > button {
+        background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%) !important;
         color:white !important; border:none !important;
         border-radius:8px !important; font-weight:600 !important;
-        height:2.75rem !important; letter-spacing:.3px;
+        height:2.75rem !important; letter-spacing:.4px;
         transition:all .3s !important;
-    }}
-    div[data-testid="stForm"] .stFormSubmitButton > button:hover {{
-        background:linear-gradient(135deg,#15803d 0%,#047857 100%) !important;
-        box-shadow:0 6px 22px rgba(22,163,74,.35) !important;
+    }
+    div[data-testid="stForm"] .stFormSubmitButton > button:hover {
+        background:linear-gradient(135deg,#4338ca 0%,#4f46e5 100%) !important;
+        box-shadow:0 6px 24px rgba(99,102,241,.4) !important;
         transform:translateY(-1px) !important;
-    }}
+    }
 
-    /* Secondary buttons (Create Account / Reset Password) */
-    .lp-action-btns .stButton > button {{
+    /* Secondary action buttons */
+    .lp-btns .stButton > button {
         background:transparent !important;
         border:1px solid #2a2d3a !important;
         color:#9ca3af !important;
         border-radius:8px !important;
         transition:all .25s !important;
-    }}
-    .lp-action-btns .stButton > button:hover {{
-        border-color:#16a34a !important;
-        color:#4ade80 !important;
-    }}
-    </style>
+        font-size:.85rem !important;
+    }
+    .lp-btns .stButton > button:hover {
+        border-color:#6366f1 !important;
+        color:#a5b4fc !important;
+    }
 
-    <div class="lp-left">
-      <div class="lp-dots"></div>
-      <div class="lp-orb lp-orb-1"></div>
-      <div class="lp-orb lp-orb-2"></div>
-      <div class="lp-beam"></div>
-      <div class="lp-beam"></div>
-      <div class="lp-beam"></div>
-      <div class="lp-content">
-        {logo_img}
-        <div class="lp-caption">
-          AI-powered SEDA audit reviewing for<br/>energy compliance in Malaysia
-        </div>
-      </div>
-    </div>
+    /* Right panel background via column target */
+    div[data-testid="stHorizontalBlock"] > div:last-child {
+        background:#090b13 !important;
+        border-left:1px solid #1c2035;
+        padding:2.5rem 2rem !important;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
-    # ── Right panel ──────────────────────────────────────────────────────────
-    # Wrap in columns so the left HTML panel sits in col[0]
-    # and the form sits in col[1]
     left_col, right_col = st.columns([1, 1], gap="small")
 
+    # ── LEFT: animated canvas panel (all in one markdown block) ──────────────
     with left_col:
-        # The HTML panel above already renders; add a spacer to fill height
-        st.markdown("<div style='min-height:500px'></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div id="lp-wrap" style="position:relative;min-height:580px;overflow:hidden;
+             background:linear-gradient(145deg,#0e1225,#141828);
+             display:flex;align-items:center;justify-content:center;padding:2rem;">
+          <canvas id="lp-cv" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+          <div style="position:relative;z-index:10;text-align:center;">
+            {logo_tag}
+            <div style="color:rgba(255,255,255,0.9);font-size:1.4rem;font-weight:700;
+                        letter-spacing:1px;margin-bottom:.5rem;">Atech<span style="color:#818cf8;">.AI</span></div>
+            <div style="color:rgba(255,255,255,0.35);font-size:.8rem;line-height:1.7;max-width:190px;margin:0 auto;">
+              Intelligent tools for<br/>energy professionals
+            </div>
+          </div>
+        </div>
+        <script>
+        (function(){{
+          const cv = document.getElementById('lp-cv');
+          if(!cv) return;
+          const ctx = cv.getContext('2d');
+          let w=0, h=0, dots=[], routes=[];
 
+          function resize(){{
+            const p = cv.parentElement;
+            w = cv.width  = p.offsetWidth  || 440;
+            h = cv.height = p.offsetHeight || 580;
+            buildScene();
+          }}
+
+          function buildScene(){{
+            dots = [];
+            for(let x=8;x<w;x+=16) for(let y=8;y<h;y+=16)
+              if(Math.random()>.3) dots.push({{x,y,o:Math.random()*.3+.05}});
+
+            const cx=w/2, cy=h/2;
+            routes = [
+              {{pts:[{{x:cx*.35,y:cy*.45}},{{x:cx*.85,y:cy*.28}},{{x:cx*1.4,y:cy*.52}}],p:0,s:.004}},
+              {{pts:[{{x:cx*.45,y:cy*1.45}},{{x:cx*1.0,y:cy*1.18}},{{x:cx*1.55,y:cy*1.38}}],p:.5,s:.005}},
+              {{pts:[{{x:cx*.25,y:cy*.85}},{{x:cx*.75,y:cy*1.12}},{{x:cx*1.2,y:cy*.78}}],p:.2,s:.006}},
+            ];
+          }}
+
+          function lerp(a,b,t){{return a+(b-a)*t;}}
+
+          function draw(){{
+            ctx.clearRect(0,0,w,h);
+            dots.forEach(d=>{{
+              ctx.beginPath();ctx.arc(d.x,d.y,1,0,Math.PI*2);
+              ctx.fillStyle=`rgba(255,255,255,${{d.o}})`;ctx.fill();
+            }});
+            routes.forEach(r=>{{
+              r.p=(r.p+r.s)%1;
+              const segs=r.pts.length-1;
+              const gp=r.p*segs;
+              const si=Math.min(Math.floor(gp),segs-1);
+              const sp=gp-si;
+              ctx.beginPath();ctx.moveTo(r.pts[0].x,r.pts[0].y);
+              r.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+              ctx.strokeStyle='rgba(99,102,241,.3)';ctx.lineWidth=1.5;ctx.stroke();
+              r.pts.forEach(p=>{{
+                ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+                ctx.fillStyle='#6366f1';ctx.fill();
+              }});
+              const mx=lerp(r.pts[si].x,r.pts[si+1].x,sp);
+              const my=lerp(r.pts[si].y,r.pts[si+1].y,sp);
+              ctx.beginPath();ctx.arc(mx,my,7,0,Math.PI*2);
+              ctx.fillStyle='rgba(129,140,248,.25)';ctx.fill();
+              ctx.beginPath();ctx.arc(mx,my,3.5,0,Math.PI*2);
+              ctx.fillStyle='#818cf8';ctx.fill();
+            }});
+            requestAnimationFrame(draw);
+          }}
+
+          window.addEventListener('resize',resize);
+          setTimeout(resize,80);
+          draw();
+        }})();
+        </script>
+        """, unsafe_allow_html=True)
+
+    # ── RIGHT: sign-in form ───────────────────────────────────────────────────
     with right_col:
-        st.markdown('<div class="lp-right-wrap">', unsafe_allow_html=True)
-        st.markdown('<p class="lp-title">Welcome back</p>', unsafe_allow_html=True)
-        st.markdown('<p class="lp-sub">Sign in to Atech.AI</p>', unsafe_allow_html=True)
+        st.markdown("""
+        <p style="color:#f3f4f6;font-size:1.75rem;font-weight:700;margin:0 0 .2rem 0;">Welcome back</p>
+        <p style="color:#6b7280;font-size:.88rem;margin:0 0 1.6rem 0;">Sign in to your account</p>
+        """, unsafe_allow_html=True)
 
         with st.form("login_form"):
             email    = st.text_input("Email address")
             password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
+            submitted = st.form_submit_button("Sign In  →", use_container_width=True, type="primary")
 
-        st.markdown('<hr class="lp-divider"/>', unsafe_allow_html=True)
+        st.markdown("<hr style='border:none;border-top:1px solid #1f2130;margin:1.2rem 0'/>",
+                    unsafe_allow_html=True)
 
-        st.markdown('<div class="lp-action-btns">', unsafe_allow_html=True)
+        st.markdown('<div class="lp-btns">', unsafe_allow_html=True)
         col_l, col_r = st.columns(2)
         with col_l:
-            st.markdown("<span style='color:#6b7280;font-size:.8rem;'>No account?</span>", unsafe_allow_html=True)
+            st.caption("No account yet?")
             if st.button("Create Account", use_container_width=True):
                 _nav("register")
         with col_r:
-            st.markdown("<span style='color:#6b7280;font-size:.8rem;'>Forgot password?</span>", unsafe_allow_html=True)
+            st.caption("Forgot password?")
             if st.button("Reset Password", use_container_width=True):
                 _nav("forgot")
-        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     if submitted:
