@@ -718,10 +718,16 @@ def page_admin():
                         st.rerun()
 
                 with gc2:
-                    if st.button("Deactivate" if u["is_active"] else "Activate",
-                                 key=f"act_{u['id']}"):
-                        set_user_active(u["id"], not u["is_active"])
-                        st.rerun()
+                    viewer_role = st.session_state.get("role", "")
+                    target_is_superadmin = u["role"] == "superadmin"
+                    can_toggle = (viewer_role == "superadmin") or (not target_is_superadmin)
+                    if can_toggle:
+                        if st.button("Deactivate" if u["is_active"] else "Activate",
+                                     key=f"act_{u['id']}"):
+                            set_user_active(u["id"], not u["is_active"])
+                            st.rerun()
+                    else:
+                        st.caption("Protected")
 
                 with gc3:
                     if u["role"] == "superadmin":
