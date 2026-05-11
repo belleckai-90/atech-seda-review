@@ -291,13 +291,15 @@ def page_login():
         box-shadow:0 6px 24px rgba(99,102,241,.4) !important;
         transform:translateY(-1px) !important;
     }
-    .lp-btns .stButton > button {
+    /* Create Account + Reset Password buttons */
+    div[data-testid="stHorizontalBlock"] > div:last-child .stButton > button {
         background:transparent !important; border:1px solid #2a2d3a !important;
-        color:#9ca3af !important; border-radius:8px !important;
+        color:#d1d5db !important; border-radius:8px !important;
         transition:all .25s !important; font-size:.85rem !important;
     }
-    .lp-btns .stButton > button:hover {
+    div[data-testid="stHorizontalBlock"] > div:last-child .stButton > button:hover {
         border-color:#6366f1 !important; color:#a5b4fc !important;
+        background:rgba(99,102,241,.08) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -416,20 +418,20 @@ resize();draw();
             password = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Sign In  →", use_container_width=True, type="primary")
 
-        st.markdown("<hr style='border:none;border-top:1px solid #1f2130;margin:1.2rem 0'/>",
+        st.markdown("<hr style='border:none;border-top:1px solid #2a2d3a;margin:1.4rem 0'/>",
                     unsafe_allow_html=True)
 
-        st.markdown('<div class="lp-btns">', unsafe_allow_html=True)
-        col_l, col_r = st.columns(2)
+        col_l, col_r = st.columns(2, gap="small")
         with col_l:
-            st.caption("No account yet?")
-            if st.button("Create Account", use_container_width=True):
+            st.markdown("<p style='color:#9ca3af;font-size:.8rem;margin:0 0 .4rem 0;'>No account yet?</p>",
+                        unsafe_allow_html=True)
+            if st.button("Create Account", use_container_width=True, key="btn_reg"):
                 _nav("register")
         with col_r:
-            st.caption("Forgot password?")
-            if st.button("Reset Password", use_container_width=True):
+            st.markdown("<p style='color:#9ca3af;font-size:.8rem;margin:0 0 .4rem 0;'>Forgot password?</p>",
+                        unsafe_allow_html=True)
+            if st.button("Reset Password", use_container_width=True, key="btn_rst"):
                 _nav("forgot")
-        st.markdown('</div>', unsafe_allow_html=True)
 
     if submitted:
         user, reason = login(email, password)
